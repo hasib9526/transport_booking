@@ -13,7 +13,7 @@ class AuthController extends GetxController {
     isLoading.value = true;
     final response = await http.get(
       Uri.parse(
-          'http://apps.bitopibd.com:8090/bimobapiv2/api/Account/GetUserInfoFroProductionApp?userName=$username&Password=$password&DeviceID=init_id&DeviceToken=464be0aa-cfc8-46a7-a217-d4e2fe4eb85c&DeviceName=Google+Pixel+3+XL&Platform=android&QryOption=1&VersionCode=31&UserCode=1&OSName=S&OSVersion=12'),
+          'http://apps.bitopibd.com:8090/bimobapiv2/api/Account/GetUserInfoFroProductionApp'),
     );
 
     if (response.statusCode == 200) {

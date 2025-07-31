@@ -31,7 +31,8 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: user != null ? TransportBookingApp() : LoginScreen(),
+      // main.dart এ MyApp ক্লাসে
+      home: user != null ? TransportBookingApp(user: user) : LoginScreen(),
     );
   }
 }
@@ -104,7 +105,8 @@ class Booking {
 }
 
 class TransportBookingApp extends StatelessWidget {
-  const TransportBookingApp({super.key});
+  final User? user;
+  const TransportBookingApp({super.key, this.user});
 
   @override
   Widget build(BuildContext context) {
@@ -135,13 +137,14 @@ class TransportBookingApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const BookingScreen(),
+      home: BookingScreen(user: user),
     );
   }
 }
 
 class BookingScreen extends StatefulWidget {
-  const BookingScreen({super.key});
+  final User? user;
+  const BookingScreen({super.key, this.user});
 
   @override
   State<BookingScreen> createState() => _BookingScreenState();
@@ -155,6 +158,7 @@ class _BookingScreenState extends State<BookingScreen> {
   final _personsController = TextEditingController();
   final _phoneController = TextEditingController();
   final _purposeController = TextEditingController();
+  final _departmentController = TextEditingController();
 
   String? _fromLocation;
   String? _toLocation;
@@ -163,14 +167,7 @@ class _BookingScreenState extends State<BookingScreen> {
   TimeOfDay? _selectedTime;
 
   final List<String> _locations = ['MGL', 'TAL', 'RHL', 'BGL', 'MISAMI'];
-  final List<String> _departments = [
-    'ERP & IT',
-    'MIS & Audit',
-    'HR',
-    'Civil',
-    'Supply Chain',
-    'Marketing & Merchandising'
-  ];
+
 
   final List<Employee> _employees = [
     Employee(id: '101', name: 'S M Munsurul Hassan', department: 'ERP & IT', phone: '01700000000'),
@@ -181,8 +178,17 @@ class _BookingScreenState extends State<BookingScreen> {
   @override
   void initState() {
     super.initState();
-    _employeeIdController.addListener(_onEmployeeIdChanged);
+    _employeeIdController.addListener(_onEmployeeIdChanged); // এই লাইন যোগ করুন
+
+    if (widget.user != null) {
+      _employeeIdController.text = widget.user?.userCode?.toString() ?? '';
+      _nameController.text = widget.user?.employeeName ?? '';
+      _department = widget.user?.department;
+      _departmentController.text = _department ?? ''; // ডিপার্টমেন্ট কন্ট্রোলারে ভ্যালু সেট করুন
+      _phoneController.text = widget.user?.phone ?? '';
+    }
   }
+
 
   @override
   void dispose() {
@@ -192,6 +198,7 @@ class _BookingScreenState extends State<BookingScreen> {
     _personsController.dispose();
     _phoneController.dispose();
     _purposeController.dispose();
+    _departmentController.dispose(); // নতুন কন্ট্রোলার ডিসপোজ করুন
     super.dispose();
   }
 
@@ -201,12 +208,14 @@ class _BookingScreenState extends State<BookingScreen> {
       setState(() {
         _nameController.text = employee.name;
         _department = employee.department;
+        _departmentController.text = _department ?? ''; // ডিপার্টমেন্ট কন্ট্রোলারে ভ্যালু সেট করুন
         _phoneController.text = employee.phone;
       });
     } else {
       setState(() {
         _nameController.clear();
         _department = null;
+        _departmentController.clear();
         _phoneController.clear();
       });
     }
@@ -256,8 +265,7 @@ class _BookingScreenState extends State<BookingScreen> {
   void _submitForm() async {
     if (_formKey.currentState!.validate() &&
         _selectedDate != null &&
-        _selectedTime != null &&
-        _department != null) {
+        _selectedTime != null ) {
       final selectedDateTime = DateTime(
         _selectedDate!.year,
         _selectedDate!.month,
@@ -268,7 +276,7 @@ class _BookingScreenState extends State<BookingScreen> {
 
       final booking = Booking(
         name: _nameController.text,
-        department: _department!,
+        department: _department ?? '',
         persons: _personsController.text,
         phone: _phoneController.text,
         purpose: _purposeController.text,
@@ -401,6 +409,7 @@ ${booking.name}
                   controller: _employeeIdController,
                   label: 'Employee ID',
                   icon: Icons.badge,
+                  readOnly: true,
                 ),
                 const SizedBox(height: 16),
                 _buildDropdown(
@@ -448,20 +457,14 @@ ${booking.name}
                   controller: _nameController,
                   label: 'Your Name',
                   icon: Icons.person,
+                  readOnly: true,
+                ), const SizedBox(height: 16),
+                _buildTextFormField(
+                  controller: _departmentController,
+                  label: 'Department',
+                  icon: Icons.business,
+                  readOnly: true,
                 ),
-                const SizedBox(height: 16),
-                _buildDropdown(
-                    label: 'Department',
-                    value: _department,
-                    items: _departments,
-                    onChanged: (value) {
-                      setState(() {
-                        _department = value;
-                      });
-                    },
-                    validator: (value) =>
-                    value == null ? 'Please select a department' : null,
-                    icon: Icons.business),
                 const SizedBox(height: 16),
                 _buildTextFormField(
                   controller: _phoneController,
@@ -494,6 +497,7 @@ ${booking.name}
     required ValueChanged<String?> onChanged,
     required FormFieldValidator<String> validator,
     required IconData icon,
+
   }) {
     return DropdownButtonFormField<String>(
       value: value,
@@ -569,6 +573,7 @@ ${booking.name}
     required String label,
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
+    bool readOnly = false,
   }) {
     return TextFormField(
       controller: controller,
@@ -577,6 +582,7 @@ ${booking.name}
         prefixIcon: Icon(icon),
       ),
       keyboardType: keyboardType,
+      readOnly: readOnly,
       validator: (value) {
         if (value == null || value.isEmpty) {
           return 'Please enter $label';
