@@ -1,13 +1,45 @@
-
-import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+
+import 'login/login_screen.dart';
+import 'model/user_model.dart';
+
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
-
-void main() {
-  runApp(const TransportBookingApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+  final userData = prefs.getString('user');
+  User? user;
+  if (userData != null) {
+    user = User.fromJson(json.decode(userData));
+  }
+  runApp(MyApp(user: user));
 }
+
+class MyApp extends StatelessWidget {
+  final User? user;
+
+  const MyApp({Key? key, this.user}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return GetMaterialApp(
+      title: 'Transport Booking',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: user != null ? TransportBookingApp() : LoginScreen(),
+    );
+  }
+}
+
+
+
+
+
 
 class Employee {
   final String id;
@@ -271,7 +303,7 @@ ${booking.name}
         scheme: 'mailto',
         path: 'mh.islam@bitopibd.com',
         query:
-            'subject=${Uri.encodeComponent(subject)}&body=${Uri.encodeComponent(body)}',
+        'subject=${Uri.encodeComponent(subject)}&body=${Uri.encodeComponent(body)}',
       );
 
       try {
@@ -347,6 +379,14 @@ ${booking.name}
               );
             },
           ),
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: () async {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.remove('user');
+              Get.offAll(() => LoginScreen());
+            },
+          )
         ],
       ),
       body: Padding(
@@ -373,7 +413,7 @@ ${booking.name}
                       });
                     },
                     validator: (value) =>
-                        value == null ? 'Please select a location' : null,
+                    value == null ? 'Please select a location' : null,
                     icon: Icons.location_on),
                 const SizedBox(height: 16),
                 _buildDropdown(
@@ -386,7 +426,7 @@ ${booking.name}
                       });
                     },
                     validator: (value) =>
-                        value == null ? 'Please select a destination' : null,
+                    value == null ? 'Please select a destination' : null,
                     icon: Icons.location_on),
                 const SizedBox(height: 16),
                 _buildDateTimePicker(context),
@@ -420,7 +460,7 @@ ${booking.name}
                       });
                     },
                     validator: (value) =>
-                        value == null ? 'Please select a department' : null,
+                    value == null ? 'Please select a department' : null,
                     icon: Icons.business),
                 const SizedBox(height: 16),
                 _buildTextFormField(
@@ -594,80 +634,80 @@ class _HistoryScreenState extends State<HistoryScreen> {
             onPressed: _bookings.isEmpty
                 ? null
                 : () {
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: const Text('Confirm'),
-                          content: const Text(
-                              'Are you sure you want to clear all booking history?'),
-                          actions: <Widget>[
-                            TextButton(
-                              child: const Text('Cancel'),
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                            ),
-                            TextButton(
-                              child: const Text('Clear'),
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                _clearHistory();
-                              },
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('Confirm'),
+                    content: const Text(
+                        'Are you sure you want to clear all booking history?'),
+                    actions: <Widget>[
+                      TextButton(
+                        child: const Text('Cancel'),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                      TextButton(
+                        child: const Text('Clear'),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          _clearHistory();
+                        },
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
           ),
         ],
       ),
       body: _bookings.isEmpty
           ? const Center(
-              child: Text(
-                'No booking history found.',
-                style: TextStyle(fontSize: 18, color: Colors.grey),
-              ),
-            )
+        child: Text(
+          'No booking history found.',
+          style: TextStyle(fontSize: 18, color: Colors.grey),
+        ),
+      )
           : ListView.builder(
-              padding: const EdgeInsets.all(8.0),
-              itemCount: _bookings.length,
-              itemBuilder: (context, index) {
-                final booking = _bookings[index];
-                return Card(
-                  elevation: 4,
-                  margin: const EdgeInsets.symmetric(vertical: 8.0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.all(16.0),
-                    title: Text(
-                      '${booking.from} to ${booking.to}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 8),
-                        Text('Date & Time: ${booking.dateTime}'),
-                        Text('Persons: ${booking.persons}'),
-                        Text('Purpose: ${booking.purpose}'),
-                        const Divider(height: 20),
-                        Text(
-                            'Booked by: ${booking.name} (${booking.department})'),
-                        Text('Contact: ${booking.phone}'),
-                      ],
-                    ),
-                    isThreeLine: true,
-                  ),
-                );
-              },
+        padding: const EdgeInsets.all(8.0),
+        itemCount: _bookings.length,
+        itemBuilder: (context, index) {
+          final booking = _bookings[index];
+          return Card(
+            elevation: 4,
+            margin: const EdgeInsets.symmetric(vertical: 8.0),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10.0),
             ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.all(16.0),
+              title: Text(
+                '${booking.from} to ${booking.to}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 8),
+                  Text('Date & Time: ${booking.dateTime}'),
+                  Text('Persons: ${booking.persons}'),
+                  Text('Purpose: ${booking.purpose}'),
+                  const Divider(height: 20),
+                  Text(
+                      'Booked by: ${booking.name} (${booking.department})'),
+                  Text('Contact: ${booking.phone}'),
+                ],
+              ),
+              isThreeLine: true,
+            ),
+          );
+        },
+      ),
     );
   }
 }
